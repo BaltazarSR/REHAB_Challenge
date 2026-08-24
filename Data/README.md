@@ -1,0 +1,177 @@
+# REHAB Dataset — Data Directory Notes
+
+This directory holds (a subset of) **REHAB**, a wearable-sensor kinematic dataset
+collected from 120 post-stroke patients during a 2-week rehabilitation program,
+described in `Article.pdf`:
+
+> Lv, M., Gao, Y., Cheng, G., Wang, L., Cai, M., Zhou, W., Guo, L., & He, K. (2026).
+> *A wearable sensor–based kinematic dataset collected under standardized
+> rehabilitation tasks from 120 post-stroke patients.* Scientific Data 13:1136.
+> https://doi.org/10.1038/s41597-026-07802-2
+
+Only the **`Rehab_exercise`** portion of the full REHAB dataset is present in this
+repo (see "What's actually in this folder" below). The full dataset also contains a
+`Rehab_assessment` portion which is **not** included here.
+
+## Study / clinical context
+
+- 120 post-stroke patients (subacute, 15–180 days post-stroke, Brunnstrom stage
+  II–VI), randomized into a **control group** (conventional occupational therapy)
+  and an **experimental group** (personalized + conventional training).
+- Data was collected during a **2-week clinical trial**: baseline assessment →
+  2 weeks of training sessions → final assessment. 109/120 patients completed
+  the trial.
+- Two data collection scenarios exist in the full dataset:
+  1. **Rehab_assessment** — 27 standardized Fugl-Meyer Assessment (FMA-UE) items,
+     scored 0/1/2 by clinicians, used to measure motor function/impairment.
+  2. **Rehab_exercise** — 16 predefined **rehabilitation training movements**
+     (not scored; used for training/movement-recognition models). **This is the
+     part present in this repo.**
+
+## Sensor hardware (Body Sensor Network)
+
+- 4 nine-axis IMUs (S1–S4, MPU9250 chip: accelerometer, gyroscope, magnetometer)
+  + 1 rehabilitation glove with embedded IMU (S5, also has piezoresistive flex
+  sensors for finger bending).
+- Placement: S1 = forearm (~10cm below wrist crease), S2 = upper arm (~8cm above
+  lateral epicondyle), S3 = thigh (~10–20cm below patella), S4 = lower leg (over
+  rectus femoris), S5 = hand/glove.
+- **Upper-limb movements** use S1, S2, S5. **Lower-limb movements** use S3, S4, S5.
+- Sampling rate: 50 Hz. Wireless transmission via ZigBee to a host PC.
+- Orientation (pitch/yaw/roll, i.e. Euler angles) is derived from raw
+  accelerometer/gyroscope/magnetometer signals via quaternion-based sensor fusion
+  (see Article.pdf Methods → "Euler angle orientation estimation").
+
+## What's actually in this folder: `Rehab_exercise/`
+
+```
+Rehab_exercise/
+├── d01_raw_data/         # raw (segmented, length-standardized) signals
+│   ├── 000_1.npy .. 015_1.npy
+│   └── 000_2.npy .. 015_2.npy
+└── d02_processed_data/   # same files, after filtering + normalization
+    ├── 000_1.npy .. 015_1.npy
+    └── 000_2.npy .. 015_2.npy
+```
+
+There are **16 movement types × 2 sensor-group files = 32 `.npy` files per
+subfolder**. Unlike the assessment data, exercise data is **not** split into
+per-patient subfolders — each file aggregates all repetitions/samples collected
+for that movement across all patients in the experimental group who performed it.
+
+### File naming: `<movementID>_<sensorID>.npy`
+
+- **`<movementID>`**: `000`–`015`, one of the 16 items in the training movement
+  library (see table below).
+- **`<sensorID>`**: `1` or `2` — which sensors' channels are in the file:
+  | sensorID | Sensors represented | Channels (C) |
+  |---|---|---|
+  | 1 | S1 & S2 if the movement is upper-limb; S3 & S4 if lower-limb | 6 |
+  | 2 | S5 (glove) | 6 |
+
+### Array shape
+
+Every file is a NumPy array of shape **`(d, 880, C)`**, where:
+- `d` = number of samples (motion repetitions/cycles) collected for that
+  movement — **varies per movement** (observed: e.g. 232 for movement 000,
+  313 for movement 015 in this copy of the data).
+- `880` = standardized signal length (time steps). Signals were truncated to
+  the first 880 points if longer, or zero-padded at the end if shorter. Each
+  sample nominally spans **8–10 motion cycles** of the movement (each item was
+  repeated ~10 times per training session).
+- `C = 6` in both `_1` and `_2` files (see channel tables below).
+
+`d01_raw_data` vs `d02_processed_data`: identical shapes/structure; `d02` has
+had **moving-average filtering** (window length 10, removes spikes/instability)
+and **zero-mean normalization** (per-signal, mean 0 / consistent variance)
+applied. `d01` is closer to the raw sensor output (already segmented and
+length-standardized to 880, but not filtered/normalized).
+
+There is **no separate label file** for `Rehab_exercise` — the movement label
+*is* the `<movementID>` embedded in the filename (0–15, see table below). Every
+sample within a given `<movementID>_*.npy` file has that same movement label.
+
+### Channels
+
+**`<sensorID>=1` (6 channels)** — orientation angles from the limb-mounted IMU
+pair (Table 9 in article):
+
+| Channel | Meaning | Units |
+|---|---|---|
+| pitch₁ | up-down tilt of S1 (or S3) | degrees |
+| yaw₁ | left-right turn of S1 (or S3) | degrees |
+| roll₁ | rolling of S1 (or S3) | degrees |
+| pitch₂ | up-down tilt of S2 (or S4) | degrees |
+| yaw₂ | left-right turn of S2 (or S4) | degrees |
+| roll₂ | rolling of S2 (or S4) | degrees |
+
+(S1/S2 for upper-limb movements, S3/S4 for lower-limb movements — see
+movement table below for which applies.)
+
+**`<sensorID>=2` (6 channels)** — glove/finger flexion + wrist pitch (Table 10):
+
+| Channel | Meaning | Units |
+|---|---|---|
+| f₁ | thumb flexion angle | degrees |
+| f₂ | index finger flexion angle | degrees |
+| f₃ | middle finger flexion angle | degrees |
+| f₄ | ring finger flexion angle | degrees |
+| f₅ | little finger flexion angle | degrees |
+| pitch₃ | up-down tilt of S5 (wrist) | degrees |
+
+Note: raw IMU channels also include acceleration (ax/ay/az, m/s²), magnetic
+field (mx/my/mz, T), and angular velocity (wx/wy/wz, rad/s) — but those are
+only exposed in the **Rehab_assessment** raw data tables in the article
+(Tables 5–7). For **Rehab_exercise**, only the derived pitch/yaw/roll (and
+flexion) channels listed above are provided (Tables 8–10) — i.e. this is
+already orientation/flexion data, not raw 9-axis signals.
+
+### Movement library (16 items, `<movementID>` 000–015)
+
+| ID | Category | Movement |
+|---|---|---|
+| 0 | Upper extremity combined (Arm/Fingers/Wrist/Shoulder) | Bobath handshake |
+| 1 | Upper extremity combined | Bobath flexion/extension |
+| 2 | Upper extremity combined | Bobath forward flexion/extension |
+| 3 | Upper extremity combined | Bobath anterior/posterior rotation |
+| 4 | Upper extremity combined | Elbow flexion and wrist compression |
+| 5 | Hands training (Fingers/Wrist) | Wrist flexion and extension |
+| 6 | Hands training | Finger-to-finger training |
+| 7 | Hands training | Ball gripping |
+| 8 | Shoulder training | Shoulder joint internal and external (rotation) |
+| 9 | Shoulder training | Breast expansion |
+| 10 | Arm training | Flexion-pressure rotation forward and backward |
+| 11 | Arm training | Elbow joint flexion and touch |
+| 12 | Arm training | Shoulder touch training |
+| 13 | Lower limbs training (Ankle/Knee/Hip) | Ankle extension & Knee internal/external rotation |
+| 14 | Lower limbs training | Knee flexion and extension |
+| 15 | Lower limbs training | Hip flexion and extension |
+
+Movements 0–12 are **upper-limb** (→ sensorID 1 = S1+S2), movements 13–15 are
+**lower-limb** (→ sensorID 1 = S3+S4). SensorID 2 is always the glove (S5) for
+all 16 movements (mainly meaningful for hand/wrist items; for pure lower-limb
+or shoulder items the glove signal is less informative but still recorded).
+
+## Quick load example
+
+```python
+import numpy as np
+
+# All samples of movement 6 ("finger-to-finger training"), IMU pair channels
+X_imu = np.load("Rehab_exercise/d02_processed_data/006_1.npy")   # (d, 880, 6)
+# Same samples' glove/finger-flexion channels
+X_glove = np.load("Rehab_exercise/d02_processed_data/006_2.npy") # (d, 880, 6)
+
+label = 6  # movement ID is fixed per file, from the filename
+```
+
+## Other notes from the article (for later reference)
+
+- Original screening: 369 patients screened → 120 enrolled (60 per hospital,
+  30 control / 30 experimental each) → 109 completed.
+- Data QC: clinician-guided acquisition, sensor calibration before each
+  session, manual removal of erroneous samples (assessment samples reduced
+  222→~222 valid, i.e. 229→222; training samples reduced 4,689→4,616 after
+  cleaning).
+- Sensor accuracy validated against manually-set reference angles; glove
+  angular error +1° to +3°, within the ±10° allowable range.
