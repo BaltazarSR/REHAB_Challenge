@@ -50,9 +50,9 @@ Sensor1 and sensor2 segments are computed independently and simply concatenated 
 
 Implemented in `main.py`. Multinomial logistic regression (softmax regression), trained from scratch — no sklearn — on the 720-column feature table against `movement_id`.
 
-**Architecture:** `Z = X @ W + b` (`W`: 720 × 16, `b`: 16), `P = softmax(Z)` row-wise, prediction = `argmax(P)`. `softmax()` subtracts each row's max before exponentiating (`Z - Z.max(axis=1, keepdims=True)`) — standard numerical-stability trick, does not change the result since softmax is shift-invariant.
+**Architecture:** `Z = X @ W + b` (`W`: 720 × 16, `b`: 16), `P = softmax(Z)` row-wise, prediction = `argmax(P)`. `softmax()` subtracts each row's max before exponentiating (`Z - Z.max(axis=1, keepdims=True)`).
 
-**Training:** full-batch gradient descent (not SGD/mini-batch — at ~3,100 training rows the full gradient is cheap enough per step that batching would only add noise, not speed). No regularization term.
+**Training:** full-batch gradient descent.
 
 - `grad_W = X.T @ (P - Y) / n_samples`, `grad_b = mean(P - Y, axis=0)`.
 
@@ -60,17 +60,4 @@ Implemented in `main.py`. Multinomial logistic regression (softmax regression), 
 
 **Prediction:** `predict(X)` runs the same forward pass as training (`softmax(X @ W + b)`) then `argmax` to pick the single most likely class.
 
-**Preprocessing:**
-
-- **Standardization**: every feature z-scored (`(x - mean) / std`) using *training-set* mean/std only — the test set is transformed with those same training statistics, never its own, to avoid leaking test information into the model. No guard for a zero-std (constant) column: verified 0 of the 720 columns are constant across the whole dataset, so `x / std` never divides by zero in practice — worth re-checking if `N_SEGMENTS` or `STATS` change.
-
-- **Train/test split** (80/20, `TEST_FRACTION = 0.2`): a plain random shuffle-split over all samples together, not stratified per `movement_id` — each class's test-set share is whatever the shuffle happens to give it, by design (deliberately kept simple rather than balanced per class).
-
-**Evaluation (`RANDOM_SEED = 14`):**
-
-```
-train accuracy: 0.958  (3104 samples)
-test accuracy:  0.495  (776 samples)
-```
-
-49.5% test accuracy is well above the 1/16 ≈ 6.25% random-chance baseline, so the features + optimizer are genuinely learning class structure — but the 96%/50% train/test gap shows the model is overfitting. Likely cause: 720 features against ~3,100 training rows.
+- **Train/test split** (80/20): a plain random shuffle-split over all samples together.
