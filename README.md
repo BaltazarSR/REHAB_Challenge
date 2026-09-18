@@ -33,6 +33,24 @@ pip install -r requirements.txt
 - **Final training pipeline:** open `Final_delivery/model_training.ipynb`
 - **Streamlit app:** `streamlit run Final_delivery/main.py`
 
+## Running the Final Delivery
+
+The final deliverable lives in `Final_delivery/`: the trained Transformer (`Transformer.py` + `transformer_model.pt`), the notebook that produced it (`model_training.ipynb`), and a Streamlit app (`main.py`) to try it interactively.
+
+1. Set up the virtual environment.
+
+2. Launch the app from the repo root:
+   ```bash
+   source .venv/bin/activate
+   streamlit run Final_delivery/main.py
+   ```
+   
+3. It opens at `http://localhost:8501` with two sections in the sidebar:
+   - **Try the Model** — pick a recorded repetition (or hit "Random sample") and classify it with the trained Transformer.
+   - **About the Project** — problem definition, approach, and results.
+
+The trained weights (`Final_delivery/transformer_model.pt`) are already committed, so the app works out of the box with no retraining needed. To regenerate them from scratch instead, run `Final_delivery/model_training.ipynb` end to end (~10 minutes on CPU) — it re-runs the hyperparameter search and overwrites `transformer_model.pt`.
+
 ## Dataset
 
 Lv, M. *et al.* (2026). *A wearable sensor–based kinematic dataset collected under standardized rehabilitation tasks from 120 post-stroke patients.* Scientific Data 13:1136. https://doi.org/10.1038/s41597-026-07802-2
