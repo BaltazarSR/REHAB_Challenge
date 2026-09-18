@@ -46,8 +46,8 @@ The final deliverable lives in `Final_delivery/`: the trained Transformer (`Tran
    ```
    
 3. It opens at `http://localhost:8501` with two sections in the sidebar:
-   - **Try the Model** — pick a recorded repetition (or hit "Random sample") and classify it with the trained Transformer.
-   - **About the Project** — problem definition, approach, and results.
+   - **Try the Model:** pick a recorded repetition (or hit "Random sample") and classify it with the trained Transformer.
+   - **About the Project:** problem definition, approach, and results.
 
 The trained weights (`Final_delivery/transformer_model.pt`) are already committed, so the app works out of the box with no retraining needed. To regenerate them from scratch instead, run `Final_delivery/model_training.ipynb` end to end (~10 minutes on CPU) — it re-runs the hyperparameter search and overwrites `transformer_model.pt`.
 
