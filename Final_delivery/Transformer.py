@@ -1,16 +1,5 @@
 """
-Final model definition for the final-delivery pipeline.
-
-Defines the two-branch Transformer encoder that Model_selection's comparison
-(CNN vs LSTM vs Transformer) picked as the best architecture (test macro-F1
-0.915, see Model_selection/model_selection.ipynb section 5).
-
-Data loading and the configuration/training/validation/regularization/
-hyperparameter search for this architecture live in `model_training.ipynb`
-in this folder, where the process is visible end-to-end.
-TwoBranchTransformer's defaults below are the winning hyperparameters that
-notebook selected -- this file is the final model, ready to be instantiated
-with no arguments beyond `max_len`.
+Final model definition.
 """
 
 from __future__ import annotations

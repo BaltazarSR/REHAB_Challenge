@@ -1,14 +1,5 @@
 """
-Streamlit UI for the REHAB movement classifier -- the "Solution" deliverable.
-
-Two sections, picked from the sidebar:
-- "Try the Model": loads the trained Transformer (transformer_model.pt) and
-  runs it on a real sample from the dataset, showing the predicted movement
-  vs. the recorded one.
-- "About the Project": informational placeholder, content to be filled in
-  later.
-
-Run with: streamlit run Final_delivery/main.py
+Streamlit UI for the REHAB movement classifier
 """
 
 from __future__ import annotations
@@ -73,9 +64,6 @@ def downsample(x: np.ndarray, valid_len: int, stride: int) -> tuple[np.ndarray, 
 
 
 def plot_example_repetition(manifest_df: pd.DataFrame, movement_id: int):
-    """Plots both sensors' raw channels for one example repetition of `movement_id`,
-    shading the padded (non-real) region so a first-time reader can see what the
-    input signal actually looks like, including the padding concept explained above."""
     row = manifest_df[manifest_df["movement_id"] == movement_id].iloc[0]
     sample_index = int(row["sample_index"])
 
